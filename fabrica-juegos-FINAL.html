@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fábrica de Juegos Educativos</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07101f;--panel:#0e1e35;--border:#1e3a58;--cyan:#00e5ff;--amber:#ffb300;--green:#00e676;--red:#ff1744;--mag:#e040fb;--text:#e8f4fd;--muted:#5a7a9a;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);font-family:'Nunito',sans-serif;color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,.03) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;}
+.app{position:relative;z-index:1;max-width:840px;margin:0 auto;padding:14px 14px 60px;}
+
+/* HUD */
+.hud{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--panel);border:1px solid var(--border);border-radius:12px;margin-bottom:18px;}
+.hud-time{font-family:'Orbitron',monospace;font-size:1.3rem;font-weight:700;color:var(--cyan);text-shadow:0 0 10px rgba(0,229,255,.5);letter-spacing:2px;min-width:68px;}
+.hud-time.red{color:var(--red);animation:blink .7s infinite;}
+.hud-bar{flex:1;height:5px;background:var(--border);border-radius:9px;overflow:hidden;}
+.hud-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--mag));border-radius:9px;transition:width .4s;}
+.hud-pts{font-family:'Orbitron',monospace;font-size:.85rem;color:var(--amber);}
+.hud-lbl{font-size:.68rem;color:var(--muted);font-weight:800;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;}
+@keyframes blink{50%{opacity:.3;}}
+
+/* SCREENS */
+.scr{display:none;}
+.scr.on{display:block;animation:up .35s ease;}
+@keyframes up{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+
+/* TYPOGRAPHY */
+.badge{display:inline-block;padding:3px 12px;border-radius:99px;border:1px solid var(--cyan);color:var(--cyan);font-size:.62rem;font-weight:800;letter-spacing:3px;text-transform:uppercase;margin-bottom:14px;}
+.big{font-family:'Orbitron',monospace;font-size:clamp(1.9rem,5vw,3.2rem);font-weight:900;line-height:1.1;margin-bottom:10px;}
+.big span{color:var(--cyan);}
+.sub{font-size:.95rem;color:var(--muted);margin-bottom:26px;line-height:1.6;max-width:520px;}
+.stitle{font-family:'Orbitron',monospace;font-size:clamp(.85rem,2.2vw,1.2rem);font-weight:700;margin-bottom:6px;}
+.ssub{font-size:.85rem;color:var(--muted);margin-bottom:18px;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:12px 26px;border-radius:10px;border:none;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:800;font-size:.95rem;transition:all .18s;text-transform:uppercase;letter-spacing:.5px;}
+.btn-c{background:var(--cyan);color:var(--bg);box-shadow:0 0 18px rgba(0,229,255,.28);}
+.btn-c:hover{transform:translateY(-2px);box-shadow:0 0 26px rgba(0,229,255,.4);}
+.btn-c:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-g{background:transparent;border:1px solid var(--border);color:var(--muted);font-size:.82rem;padding:9px 18px;}
+.btn-g:hover{border-color:var(--cyan);color:var(--cyan);}
+.btn-dl{background:var(--green);color:#000;font-size:1rem;padding:14px 32px;box-shadow:0 0 18px rgba(0,230,118,.3);}
+.btn-dl:hover{transform:translateY(-2px);}
+
+/* SUBJECT CARDS */
+.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;}
+@media(max-width:460px){.sg{grid-template-columns:1fr;}}
+.sc{background:var(--panel);border:2px solid var(--border);border-radius:16px;padding:22px 14px;text-align:center;cursor:pointer;transition:all .2s;user-select:none;}
+.sc:hover{border-color:var(--cyan);transform:translateY(-3px);}
+.sc.sel{border-color:var(--cyan);background:rgba(0,229,255,.09);box-shadow:0 0 18px rgba(0,229,255,.18);}
+.sc .si{font-size:2.8rem;margin-bottom:9px;display:block;}
+.sc .sn{font-size:.95rem;font-weight:800;}
+.sc .st{font-size:.68rem;color:var(--muted);margin-top:3px;}
+
+/* CONFIG */
+.cs{background:var(--panel);border:1px solid var(--border);border-radius:13px;padding:16px 18px;margin-bottom:12px;}
+.cl{font-size:.65rem;color:var(--muted);font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+.tr{display:flex;gap:7px;flex-wrap:wrap;}
+.tg{padding:7px 14px;border-radius:8px;border:2px solid var(--border);background:transparent;color:var(--text);cursor:pointer;font-family:'Nunito',sans-serif;font-size:.85rem;font-weight:700;transition:all .18s;}
+.tg:hover{border-color:var(--cyan);color:var(--cyan);}
+.tg.on{border-color:var(--cyan);background:rgba(0,229,255,.11);color:var(--cyan);}
+.tgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;}
+@media(max-width:400px){.tgrid{grid-template-columns:repeat(4,1fr);}}
+.tn{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:7px;border:2px solid var(--border);background:transparent;font-family:'Orbitron',monospace;font-size:.9rem;font-weight:700;color:var(--text);cursor:pointer;transition:all .18s;}
+.tn:hover{border-color:var(--cyan);}
+.tn.on{border-color:var(--cyan);background:rgba(0,229,255,.14);color:var(--cyan);box-shadow:0 0 10px rgba(0,229,255,.22);}
+
+/* GAME WRAPPER */
+.gwrap{width:100%;position:relative;border-radius:16px;overflow:hidden;border:2px solid var(--border);}
+#GW{position:absolute;top:0;left:0;cursor:crosshair;user-select:none;}
+
+/* GAME OVERLAY */
+.g-overlay{position:absolute;top:0;left:0;right:0;z-index:30;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);}
+.g-q{font-family:'Orbitron',monospace;font-size:clamp(1.1rem,2.5vw,1.8rem);font-weight:900;color:var(--text);}
+.g-q span{color:var(--cyan);}
+.g-cmd{font-family:'Nunito',sans-serif;font-size:clamp(.75rem,2vw,1rem);font-weight:800;color:var(--amber);text-align:center;flex:1;padding:0 10px;line-height:1.3;}
+.g-prog{font-family:'Orbitron',monospace;font-size:.82rem;color:var(--green);white-space:nowrap;}
+.g-lives{font-size:1.1rem;white-space:nowrap;margin-left:8px;}
+
+/* MATH THEMES */
+.th-space{background:radial-gradient(ellipse at 50% 0%,#160838 0%,#040010 100%);}
+.th-ocean{background:linear-gradient(180deg,#001428 0%,#002a50 60%,#003060 100%);}
+.th-jungle{background:linear-gradient(180deg,#061a04 0%,#0e3008 60%,#163c0a 100%);}
+.th-snow{background:linear-gradient(180deg,#8ab8d8 0%,#b8d8f0 50%,#d0e8f8 100%);}
+
+/* SCIENCE HABITATS */
+.hab-jungle{background:linear-gradient(180deg,#030f02 0%,#0a2205 70%,#143008 100%);}
+.hab-ocean{background:linear-gradient(180deg,#000a18 0%,#001530 50%,#002040 100%);}
+.hab-savanna{background:linear-gradient(180deg,#3a1800 0%,#7a3800 40%,#b06010 70%,#c87820 100%);}
+.hab-night{background:radial-gradient(ellipse at 50% 0%,#0a0820 0%,#040610 100%);}
+
+/* LANGUAGE THEMES */
+.lth-library{background:linear-gradient(180deg,#1a0c04 0%,#2c1808 100%);}
+.lth-garden{background:linear-gradient(180deg,#021404 0%,#063010 100%);}
+.lth-cosmos{background:radial-gradient(ellipse at 50% 30%,#08001a 0%,#020008 100%);}
+.lth-beach{background:linear-gradient(180deg,#001828 0%,#002840 50%,#403818 100%);}
+
+/* MATH OBJECTS */
+.mobj{position:absolute;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-weight:900;font-size:1.2rem;cursor:pointer;z-index:10;user-select:none;transition:transform .1s;}
+.mobj:active{transform:scale(.9);}
+.th-space .mobj{background:rgba(20,5,50,.9);border:2px solid var(--cyan);color:var(--cyan);box-shadow:0 0 14px rgba(0,229,255,.4);}
+.th-ocean .mobj{background:rgba(0,50,120,.75);border:2px solid #60c8ff;color:#fff;box-shadow:0 0 12px rgba(0,180,255,.35);}
+.th-jungle .mobj{background:rgba(10,40,5,.9);border:2px solid #60e030;color:#a0ff60;box-shadow:0 0 12px rgba(80,200,20,.35);}
+.th-snow .mobj{background:rgba(220,240,255,.92);border:2px solid #80b8d8;color:#205080;box-shadow:0 4px 12px rgba(100,160,200,.35);}
+@keyframes popOk{0%{transform:scale(1);opacity:1;}60%{transform:scale(1.8);opacity:.6;}100%{transform:scale(2.4);opacity:0;}}
+@keyframes popFail{0%,100%{transform:scale(1);}20%{transform:scale(1.15) rotate(-8deg);}60%{transform:scale(1.15) rotate(8deg);}}
+
+/* ANIMALS */
+.anim{position:absolute;font-size:2.4rem;cursor:pointer;z-index:10;user-select:none;transition:left 2s ease-in-out,top 2s ease-in-out;filter:drop-shadow(0 3px 5px rgba(0,0,0,.6));}
+.anim:hover{filter:drop-shadow(0 3px 5px rgba(0,0,0,.6)) brightness(1.3);}
+.anim .albl{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:.58rem;font-family:'Nunito',sans-serif;font-weight:800;white-space:nowrap;color:rgba(255,255,255,.8);pointer-events:none;background:rgba(0,0,0,.4);padding:1px 4px;border-radius:4px;}
+@keyframes aCatch{0%{transform:scale(1);opacity:1;}40%{transform:scale(1.7);}100%{transform:scale(0);opacity:0;}}
+@keyframes aWrong{0%,100%{transform:scale(1);}25%{transform:scale(1.1) rotate(-12deg);}75%{transform:scale(1.1) rotate(12deg);}}
+
+/* LANGUAGE */
+.wfloat{position:absolute;padding:8px 15px;border-radius:20px;font-size:.95rem;font-weight:800;cursor:pointer;z-index:10;user-select:none;animation:wdrift var(--dur,4s) var(--dly,0s) ease-in-out infinite;}
+.wfloat:hover{filter:brightness(1.3);}
+.wfloat.used{opacity:0;pointer-events:none;animation:none;}
+@keyframes wdrift{0%,100%{transform:translateY(0) translateX(0) rotate(-2deg);}25%{transform:translateY(-12px) translateX(8px) rotate(2deg);}50%{transform:translateY(6px) translateX(-6px) rotate(-1deg);}75%{transform:translateY(-8px) translateX(4px) rotate(3deg);}}
+.lth-library .wfloat{background:rgba(80,40,10,.9);border:2px solid #c87820;color:#ffcc70;}
+.lth-garden .wfloat{background:rgba(10,50,10,.9);border:2px solid #40c040;color:#a0ff80;}
+.lth-cosmos .wfloat{background:rgba(20,5,50,.9);border:2px solid var(--mag);color:#f090ff;}
+.lth-beach .wfloat{background:rgba(0,40,70,.9);border:2px solid #40c8ff;color:#80e8ff;}
+
+/* SENTENCE AREA */
+.sent-display{position:absolute;top:0;left:0;right:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);padding:10px 14px;z-index:20;}
+.sent-title{font-size:.65rem;color:var(--muted);font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;text-align:center;}
+.sent-slots{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;}
+.sl{padding:6px 12px;border-radius:8px;font-size:.88rem;font-weight:800;min-width:44px;text-align:center;cursor:default;}
+.sl.empty{background:rgba(255,255,255,.08);border:2px dashed rgba(255,255,255,.2);color:rgba(255,255,255,.25);}
+.sl.filled{background:rgba(0,229,255,.15);border:2px solid var(--cyan);color:var(--cyan);cursor:pointer;}
+.sl.filled:hover{background:rgba(0,229,255,.25);}
+.sl.ok{background:rgba(0,230,118,.18);border:2px solid var(--green);color:var(--green);}
+.sl.fail{background:rgba(255,23,68,.18);border:2px solid var(--red);color:var(--red);}
+.l-check-btn{position:absolute;bottom:12px;right:14px;z-index:25;padding:10px 20px;border-radius:10px;border:none;background:var(--cyan);color:var(--bg);font-family:'Nunito',sans-serif;font-weight:800;font-size:.9rem;cursor:pointer;transition:all .18s;text-transform:uppercase;}
+.l-check-btn:hover{transform:translateY(-2px);}
+.l-check-btn:disabled{opacity:.3;cursor:not-allowed;transform:none;}
+.l-prog-lbl{position:absolute;bottom:14px;left:14px;z-index:25;font-family:'Orbitron',monospace;font-size:.75rem;color:var(--muted);}
+.l-lives-lbl{position:absolute;bottom:42px;right:14px;z-index:25;font-size:1rem;}
+
+/* DECORATIONS */
+.star-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+.star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--tw,3s) var(--twd,0s) ease-in-out infinite;}
+@keyframes twinkle{0%,100%{opacity:.3;}50%{opacity:1;}}
+.ground{position:absolute;bottom:0;left:0;right:0;height:55px;z-index:1;pointer-events:none;}
+.hab-jungle .ground,.th-jungle .ground{background:linear-gradient(180deg,#0a2a05,#163808);}
+.hab-savanna .ground{background:linear-gradient(180deg,#5a3008,#3a1a04);}
+.hab-night .ground{background:linear-gradient(180deg,#0a0818,#060410);}
+.th-snow .ground{background:linear-gradient(180deg,#c8e0f0,#a8c8e0);}
+.ocean-floor{position:absolute;bottom:0;left:0;right:0;height:35px;background:linear-gradient(180deg,#001828,#001020);z-index:1;pointer-events:none;}
+.bubble-d{position:absolute;border-radius:50%;background:rgba(100,200,255,.1);border:1px solid rgba(100,200,255,.2);animation:brise var(--bd,6s) var(--bdd,0s) linear infinite;pointer-events:none;}
+@keyframes brise{0%{transform:translateY(0);opacity:.6;}100%{transform:translateY(-340px);opacity:0;}}
+.tree{position:absolute;bottom:0;font-size:2.4rem;z-index:2;pointer-events:none;}
+.moon{position:absolute;top:60px;right:20px;width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fffff0,#d4d060);box-shadow:0 0 20px rgba(255,255,180,.4);z-index:2;pointer-events:none;}
+
+/* RESULT */
+.res{text-align:center;padding:10px 0;}
+.r-icon{font-size:4.5rem;display:block;margin-bottom:12px;}
+.r-title{font-family:'Orbitron',monospace;font-size:clamp(1.4rem,4vw,2.4rem);font-weight:900;margin-bottom:8px;}
+.r-sub{font-size:.9rem;color:var(--muted);margin-bottom:22px;}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:22px;}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:14px 10px;text-align:center;}
+.sv{font-family:'Orbitron',monospace;font-size:1.7rem;font-weight:700;display:block;margin-bottom:3px;}
+.sl2{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.r-acts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:18px;}
+.tip{background:rgba(0,230,118,.07);border:1px solid rgba(0,230,118,.28);border-radius:11px;padding:14px 18px;font-size:.85rem;line-height:1.6;text-align:left;}
+.tip strong{color:var(--green);}
+
+/* CONFETTI */
+.cf{position:fixed;width:7px;height:7px;top:-10px;animation:cff linear forwards;pointer-events:none;z-index:9999;}
+@keyframes cff{0%{transform:translateY(0) rotate(0) translateX(0);opacity:1;}100%{transform:translateY(110vh) rotate(720deg) translateX(var(--dx));opacity:0;}}
+
+/* FLASH OVERLAY */
+.flash-red{position:absolute;inset:0;background:rgba(255,23,68,.3);pointer-events:none;z-index:50;animation:flashAnim .5s ease forwards;}
+.flash-green{position:absolute;inset:0;background:rgba(0,230,118,.2);pointer-events:none;z-index:50;animation:flashAnim .5s ease forwards;}
+@keyframes flashAnim{0%{opacity:1;}100%{opacity:0;}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div class="hud-time" id="hudT">08:00</div>
+  <div class="hud-bar"><div class="hud-fill" id="hudB" style="width:0%"></div></div>
+  <div class="hud-lbl" id="hudL">INICIO</div>
+  <div class="hud-pts">⭐<span id="hudP">0</span></div>
+</div>
+
+<!-- INTRO -->
+<div class="scr on" id="s0">
+  <div class="badge">🏫 Red de Aprendizaje · Zona 6 · 2026</div>
+  <h1 class="big">FÁBRICA DE<br><span>JUEGOS EDUCATIVOS</span></h1>
+  <p class="sub">Configura tu juego, elige el tema visual y en minutos tendrás una actividad interactiva lista para tus estudiantes — sin instalar nada.</p>
+  <button class="btn btn-c" onclick="go(1)">⚡ CREAR MI JUEGO</button>
+</div>
+
+<!-- SUBJECT -->
+<div class="scr" id="s1">
+  <div class="stitle">📚 ¿Para qué materia es tu juego?</div>
+  <p class="ssub">Cada materia genera un juego diferente con mecánicas únicas</p>
+  <div class="sg">
+    <div class="sc" id="sc-m" onclick="pickSub('math',this)">
+      <span class="si">📐</span><div class="sn">Matemáticas</div><div class="st">Lluvia de respuestas</div>
+    </div>
+    <div class="sc" id="sc-s" onclick="pickSub('sci',this)">
+      <span class="si">🌿</span><div class="sn">Ciencias Naturales</div><div class="st">Atrapa el animal</div>
+    </div>
+    <div class="sc" id="sc-l" onclick="pickSub('lang',this)">
+      <span class="si">📖</span><div class="sn">Lengua y Literatura</div><div class="st">Palabras voladoras</div>
+    </div>
+  </div>
+  <button class="btn btn-c" id="btnCfg" onclick="go(2)" disabled>Configurar juego →</button>
+</div>
+
+<!-- CONFIG -->
+<div class="scr" id="s2">
+  <!-- MATH -->
+  <div id="cm" style="display:none">
+    <div class="stitle">⚙️ Configura tu Juego de Matemáticas</div>
+    <p class="ssub">Elige la operación, el tema visual y la dificultad</p>
+    <div class="cs"><div class="cl">Tipo de operación</div><div class="tr">
+      <button class="tg on" data-g="op" onclick="sc('op','mul',this)">✕ Tablas</button>
+      <button class="tg"    data-g="op" onclick="sc('op','sum',this)">+ Suma</button>
+      <button class="tg"    data-g="op" onclick="sc('op','sub',this)">− Resta</button>
+    </div></div>
+    <div class="cs" id="tbl-sel"><div class="cl">Tabla a practicar</div><div class="tgrid" id="tblG"></div></div>
+    <div class="cs" id="range-sel" style="display:none"><div class="cl">Rango de números</div><div class="tr">
+      <button class="tg on" data-g="rng" onclick="sc('range',10,this)">Hasta 10</button>
+      <button class="tg"    data-g="rng" onclick="sc('range',20,this)">Hasta 20</button>
+      <button class="tg"    data-g="rng" onclick="sc('range',50,this)">Hasta 50</button>
+      <button class="tg"    data-g="rng" onclick="sc('range',100,this)">Hasta 100</button>
+    </div></div>
+    <div class="cs"><div class="cl">Tema visual del juego</div><div class="tr">
+      <button class="tg on" data-g="mth" onclick="sc('mtheme','space',this)">🚀 Espacio</button>
+      <button class="tg"    data-g="mth" onclick="sc('mtheme','ocean',this)">🌊 Océano</button>
+      <button class="tg"    data-g="mth" onclick="sc('mtheme','jungle',this)">🌿 Selva</button>
+      <button class="tg"    data-g="mth" onclick="sc('mtheme','snow',this)">❄️ Nieve</button>
+    </div></div>
+    <div class="cs"><div class="cl">Número de preguntas</div><div class="tr">
+      <button class="tg on" data-g="qc" onclick="sc('qcount',5,this)">5</button>
+      <button class="tg"    data-g="qc" onclick="sc('qcount',10,this)">10</button>
+      <button class="tg"    data-g="qc" onclick="sc('qcount',15,this)">15</button>
+    </div></div>
+    <div class="cs"><div class="cl">Velocidad de caída</div><div class="tr">
+      <button class="tg"    data-g="sp" onclick="sc('speed','slow',this)">🐢 Lenta</button>
+      <button class="tg on" data-g="sp" onclick="sc('speed','norm',this)">🚶 Normal</button>
+      <button class="tg"    data-g="sp" onclick="sc('speed','fast',this)">🏃 Rápida</button>
+    </div></div>
+    <div class="cs"><div class="cl">Vidas del jugador</div><div class="tr">
+      <button class="tg"    data-g="lv" onclick="sc('lives',5,this)">❤️❤️❤️❤️❤️ 5 vidas</button>
+      <button class="tg on" data-g="lv" onclick="sc('lives',3,this)">❤️❤️❤️ 3 vidas</button>
+      <button class="tg"    data-g="lv" onclick="sc('lives',1,this)">❤️ 1 vida</button>
+    </div></div>
+  </div>
+  <!-- SCIENCE -->
+  <div id="cs" style="display:none">
+    <div class="stitle">⚙️ Configura tu Juego de Ciencias</div>
+    <p class="ssub">Elige el tipo de clasificación y el hábitat</p>
+    <div class="cs"><div class="cl">¿Qué deben clasificar?</div><div class="tr">
+      <button class="tg on" data-g="sm" onclick="sc('scimode','vi',this)">🦴 Vertebrado / Invertebrado</button>
+      <button class="tg"    data-g="sm" onclick="sc('scimode','cls',this)">🔬 Por clase animal</button>
+    </div></div>
+    <div class="cs"><div class="cl">Hábitat del juego</div><div class="tr">
+      <button class="tg on" data-g="hb" onclick="sc('habitat','jungle',this)">🌿 Selva tropical</button>
+      <button class="tg"    data-g="hb" onclick="sc('habitat','ocean',this)">🌊 Fondo del mar</button>
+      <button class="tg"    data-g="hb" onclick="sc('habitat','savanna',this)">🌅 Sabana africana</button>
+      <button class="tg"    data-g="hb" onclick="sc('habitat','night',this)">🌙 Noche misteriosa</button>
+    </div></div>
+    <div class="cs"><div class="cl">Animales en pantalla</div><div class="tr">
+      <button class="tg on" data-g="ac" onclick="sc('anicount',6,this)">6 animales · Básico</button>
+      <button class="tg"    data-g="ac" onclick="sc('anicount',10,this)">10 animales · Completo</button>
+    </div></div>
+    <div class="cs"><div class="cl">Velocidad de movimiento</div><div class="tr">
+      <button class="tg"    data-g="sv" onclick="sc('spd','slow',this)">🐢 Lenta</button>
+      <button class="tg on" data-g="sv" onclick="sc('spd','norm',this)">🚶 Normal</button>
+      <button class="tg"    data-g="sv" onclick="sc('spd','fast',this)">🏃 Rápida</button>
+    </div></div>
+  </div>
+  <!-- LANGUAGE -->
+  <div id="cl2" style="display:none">
+    <div class="stitle">⚙️ Configura tu Juego de Lengua</div>
+    <p class="ssub">Elige el tema y la dificultad de las oraciones</p>
+    <div class="cs"><div class="cl">Dificultad</div><div class="tr">
+      <button class="tg on" data-g="ld" onclick="sc('ldiff','easy',this)">🌱 Fácil (3–4 palabras)</button>
+      <button class="tg"    data-g="ld" onclick="sc('ldiff','med',this)">🌿 Media (5–6 palabras)</button>
+      <button class="tg"    data-g="ld" onclick="sc('ldiff','hard',this)">🌳 Difícil (7+ palabras)</button>
+    </div></div>
+    <div class="cs"><div class="cl">Tema visual</div><div class="tr">
+      <button class="tg on" data-g="lt" onclick="sc('ltheme','library',this)">📚 Biblioteca</button>
+      <button class="tg"    data-g="lt" onclick="sc('ltheme','garden',this)">🌸 Jardín</button>
+      <button class="tg"    data-g="lt" onclick="sc('ltheme','cosmos',this)">🌌 Cosmos</button>
+      <button class="tg"    data-g="lt" onclick="sc('ltheme','beach',this)">🏖️ Playa</button>
+    </div></div>
+    <div class="cs"><div class="cl">Número de oraciones</div><div class="tr">
+      <button class="tg on" data-g="lc" onclick="sc('lcount',3,this)">3 oraciones</button>
+      <button class="tg"    data-g="lc" onclick="sc('lcount',5,this)">5 oraciones</button>
+      <button class="tg"    data-g="lc" onclick="sc('lcount',7,this)">7 oraciones</button>
+    </div></div>
+  </div>
+  <br>
+  <button class="btn btn-c" id="btnPlay" onclick="launchGame()">▶ INICIAR JUEGO</button>
+</div>
+
+<!-- GAME -->
+<div class="scr" id="s3">
+  <div class="gwrap" id="gwrap"><div id="GW"></div></div>
+</div>
+
+<!-- RESULT -->
+<div class="scr" id="s4">
+  <div class="res">
+    <span class="r-icon" id="rIco">🏆</span>
+    <h2 class="r-title" id="rTit">¡Completado!</h2>
+    <p class="r-sub">Tu juego está listo para el aula</p>
+    <div class="stats">
+      <div class="stat"><span class="sv" id="rPts" style="color:var(--amber)">0</span><span class="sl2">Puntos</span></div>
+      <div class="stat"><span class="sv" id="rAcc" style="color:var(--green)">0%</span><span class="sl2">Precisión</span></div>
+      <div class="stat"><span class="sv" id="rCor" style="color:var(--cyan)">0/0</span><span class="sl2">Correctas</span></div>
+    </div>
+    <div class="r-acts">
+      <button class="btn btn-dl" onclick="dlGame()">⬇ DESCARGAR MI JUEGO</button>
+      <button class="btn btn-c"  onclick="replayGame()">🔄 Jugar de nuevo</button>
+      <button class="btn btn-g"  onclick="resetAll()">🏠 Crear otro</button>
+    </div>
+    <div class="tip">💡 <strong>Descarga tu juego</strong> y ábrelo en el proyector o en las computadoras del lab. Tus estudiantes juegan directamente — sin internet ni cuentas.</div>
+  </div>
+</div>
+
+</div>
+<script>
+/* ═══════════════ DATA ═══════════════ */
+const ANIMALS={
+  jungle:[
+    {n:'Jaguar',   e:'🐆',vi:'Vertebrado',  cl:'Mamífero',mv:'walk'},
+    {n:'Gorila',   e:'🦍',vi:'Vertebrado',  cl:'Mamífero',mv:'walk'},
+    {n:'Loro',     e:'🦜',vi:'Vertebrado',  cl:'Ave',     mv:'fly'},
+    {n:'Tucán',    e:'🦅',vi:'Vertebrado',  cl:'Ave',     mv:'fly'},
+    {n:'Serpiente',e:'🐍',vi:'Vertebrado',  cl:'Reptil',  mv:'slither'},
+    {n:'Cocodrilo',e:'🐊',vi:'Vertebrado',  cl:'Reptil',  mv:'walk'},
+    {n:'Rana',     e:'🐸',vi:'Vertebrado',  cl:'Anfibio', mv:'hop'},
+    {n:'Mariposa', e:'🦋',vi:'Invertebrado',cl:'Insecto', mv:'fly'},
+    {n:'Araña',    e:'🕷️',vi:'Invertebrado',cl:'Arácnido',mv:'walk'},
+    {n:'Abeja',    e:'🐝',vi:'Invertebrado',cl:'Insecto', mv:'fly'},
+  ],
+  ocean:[
+    {n:'Tiburón',  e:'🦈',vi:'Vertebrado',  cl:'Pez',     mv:'swim'},
+    {n:'Delfín',   e:'🐬',vi:'Vertebrado',  cl:'Mamífero',mv:'swim'},
+    {n:'Ballena',  e:'🐋',vi:'Vertebrado',  cl:'Mamífero',mv:'swim'},
+    {n:'Salmón',   e:'🐟',vi:'Vertebrado',  cl:'Pez',     mv:'swim'},
+    {n:'Raya',     e:'🐠',vi:'Vertebrado',  cl:'Pez',     mv:'swim'},
+    {n:'Pulpo',    e:'🐙',vi:'Invertebrado',cl:'Molusco', mv:'float'},
+    {n:'Medusa',   e:'🪼',vi:'Invertebrado',cl:'Cnidario',mv:'float'},
+    {n:'Cangrejo', e:'🦀',vi:'Invertebrado',cl:'Crustáceo',mv:'walk'},
+    {n:'Langosta', e:'🦞',vi:'Invertebrado',cl:'Crustáceo',mv:'walk'},
+    {n:'Caracol',  e:'🐚',vi:'Invertebrado',cl:'Molusco', mv:'walk'},
+  ],
+  savanna:[
+    {n:'León',     e:'🦁',vi:'Vertebrado',  cl:'Mamífero',mv:'walk'},
+    {n:'Jirafa',   e:'🦒',vi:'Vertebrado',  cl:'Mamífero',mv:'walk'},
+    {n:'Cebra',    e:'🦓',vi:'Vertebrado',  cl:'Mamífero',mv:'walk'},
+    {n:'Elefante', e:'🐘',vi:'Vertebrado',  cl:'Mamífero',mv:'walk'},
+    {n:'Águila',   e:'🦅',vi:'Vertebrado',  cl:'Ave',     mv:'fly'},
+    {n:'Avestruz', e:'🦤',vi:'Vertebrado',  cl:'Ave',     mv:'walk'},
+    {n:'Cocodrilo',e:'🐊',vi:'Vertebrado',  cl:'Reptil',  mv:'walk'},
+    {n:'Serpiente',e:'🐍',vi:'Vertebrado',  cl:'Reptil',  mv:'slither'},
+    {n:'Escarabajo',e:'🪲',vi:'Invertebrado',cl:'Insecto',mv:'walk'},
+    {n:'Escorpión',e:'🦂',vi:'Invertebrado',cl:'Arácnido',mv:'walk'},
+  ],
+  night:[
+    {n:'Murciélago',e:'🦇',vi:'Vertebrado', cl:'Mamífero',mv:'fly'},
+    {n:'Búho',     e:'🦉',vi:'Vertebrado',  cl:'Ave',     mv:'fly'},
+    {n:'Lobo',     e:'🐺',vi:'Vertebrado',  cl:'Mamífero',mv:'walk'},
+    {n:'Zorro',    e:'🦊',vi:'Vertebrado',  cl:'Mamífero',mv:'walk'},
+    {n:'Sapo',     e:'🐸',vi:'Vertebrado',  cl:'Anfibio', mv:'hop'},
+    {n:'Serpiente',e:'🐍',vi:'Vertebrado',  cl:'Reptil',  mv:'slither'},
+    {n:'Luciérnaga',e:'🪲',vi:'Invertebrado',cl:'Insecto',mv:'fly'},
+    {n:'Araña',    e:'🕷️',vi:'Invertebrado',cl:'Arácnido',mv:'walk'},
+    {n:'Escorpión',e:'🦂',vi:'Invertebrado',cl:'Arácnido',mv:'walk'},
+    {n:'Gato',     e:'🐱',vi:'Vertebrado',  cl:'Mamífero',mv:'walk'},
+  ],
+};
+
+const SENTS={
+  easy:[
+    {w:['El','sol','brilla'],        a:'El sol brilla'},
+    {w:['Mi','gato','duerme'],       a:'Mi gato duerme'},
+    {w:['Los','niños','ríen'],       a:'Los niños ríen'},
+    {w:['Ella','canta','bien'],      a:'Ella canta bien'},
+    {w:['El','viento','sopla'],      a:'El viento sopla'},
+    {w:['Yo','leo','libros'],        a:'Yo leo libros'},
+    {w:['La','luna','brilla'],       a:'La luna brilla'},
+  ],
+  med:[
+    {w:['El','gato','duerme','en','casa'],         a:'El gato duerme en casa'},
+    {w:['La','maestra','enseña','con','amor'],      a:'La maestra enseña con amor'},
+    {w:['Mi','perro','corre','muy','rápido'],       a:'Mi perro corre muy rápido'},
+    {w:['Los','peces','nadan','en','el','mar'],     a:'Los peces nadan en el mar'},
+    {w:['El','viento','mueve','las','hojas'],       a:'El viento mueve las hojas'},
+    {w:['La','flor','tiene','muchos','colores'],    a:'La flor tiene muchos colores'},
+    {w:['Los','pájaros','cantan','muy','alto'],     a:'Los pájaros cantan muy alto'},
+  ],
+  hard:[
+    {w:['El','pequeño','pájaro','canta','en','las','mañanas'],    a:'El pequeño pájaro canta en las mañanas'},
+    {w:['Los','estudiantes','trabajan','con','mucho','esfuerzo'], a:'Los estudiantes trabajan con mucho esfuerzo'},
+    {w:['La','naturaleza','nos','da','todo','lo','necesario'],    a:'La naturaleza nos da todo lo necesario'},
+    {w:['El','viento','mueve','las','ramas','del','árbol'],       a:'El viento mueve las ramas del árbol'},
+    {w:['Mi','maestra','explica','la','clase','con','claridad'],  a:'Mi maestra explica la clase con claridad'},
+    {w:['Los','niños','juegan','felices','en','el','recreo'],     a:'Los niños juegan felices en el recreo'},
+    {w:['El','río','corre','rápido','entre','las','montañas'],    a:'El río corre rápido entre las montañas'},
+  ]
+};
+
+/* ═══════════════ STATE ═══════════════ */
+const A={
+  sub:null,
+  cfg:{op:'mul',table:null,range:10,mtheme:'space',qcount:5,speed:'norm',lives:3,
+       scimode:'vi',habitat:'jungle',anicount:6,spd:'norm',
+       ldiff:'easy',ltheme:'library',lcount:3},
+  score:0,lives:3,gTime:480,gInt:null,
+  gRun:false,gAnim:null,correct:0,total:0,
+  // math
+  mQs:[],mIdx:0,mObjs:[],mSpawned:new Set(),mLastT:0,mSpawnClock:0,
+  // science
+  sObjs:[],sTarget:null,sCaught:0,sNeeded:0,sRound:0,sRounds:[],
+  // language
+  lSents:[],lIdx:0,lSlots:[],lWordObjs:[],
+};
+const GW_W=760,GW_H=440;
+let gwScale=1;
+
+/* ═══════════════ UTILS ═══════════════ */
+function shuf(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function rnd(lo,hi){return Math.random()*(hi-lo)+lo;}
+function addPts(p){A.score+=p;document.getElementById('hudP').textContent=A.score;}
+function setBar(p){document.getElementById('hudB').style.width=p+'%';}
+function showScr(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on');window.scrollTo(0,0);}
+function getGW(){return document.getElementById('GW');}
+function scaleGW(){
+  const wrap=document.getElementById('gwrap');if(!wrap)return;
+  gwScale=wrap.offsetWidth/GW_W;
+  const gw=getGW();
+  gw.style.width=GW_W+'px';gw.style.height=GW_H+'px';
+  gw.style.transform=`scale(${gwScale})`;gw.style.transformOrigin='top left';
+  wrap.style.height=(GW_H*gwScale)+'px';
+}
+function flashOverlay(cls){
+  const gw=getGW();const fl=document.createElement('div');fl.className=cls;
+  gw.appendChild(fl);setTimeout(()=>fl.remove(),600);
+}
+
+/* ═══════════════ GLOBAL TIMER ═══════════════ */
+function startGT(){
+  clearInterval(A.gInt);
+  A.gInt=setInterval(()=>{
+    A.gTime--;
+    const m=String(Math.floor(A.gTime/60)).padStart(2,'0');
+    const s=String(A.gTime%60).padStart(2,'0');
+    const el=document.getElementById('hudT');
+    el.textContent=`${m}:${s}`;
+    if(A.gTime<=60)el.classList.add('red');
+    if(A.gTime<=0){clearInterval(A.gInt);endGame();}
+  },1000);
+}
+
+/* ═══════════════ NAVIGATION ═══════════════ */
+function go(n){
+  if(n===1){
+    document.getElementById('hud').style.display='flex';
+    A.gTime=480;document.getElementById('hudT').textContent='08:00';
+    document.getElementById('hudT').classList.remove('red');
+    startGT();setBar(33);document.getElementById('hudL').textContent='PASO 1/3';
+    showScr('s1');
+  } else if(n===2){
+    setBar(66);document.getElementById('hudL').textContent='PASO 2/3';
+    ['cm','cs','cl2'].forEach(x=>document.getElementById(x).style.display='none');
+    document.getElementById({math:'cm',sci:'cs',lang:'cl2'}[A.sub]).style.display='block';
+    if(A.sub==='math'){buildTG();document.getElementById('btnPlay').disabled=!A.cfg.table;}
+    else document.getElementById('btnPlay').disabled=false;
+    showScr('s2');
+  }
+}
+
+function pickSub(s,el){
+  A.sub=s;
+  document.querySelectorAll('.sc').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('btnCfg').disabled=false;
+}
+
+function sc(key,val,btn){
+  A.cfg[key]=val;
+  if(btn){
+    const g=btn.dataset.g;
+    if(g)document.querySelectorAll(`[data-g="${g}"]`).forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+  }
+  if(key==='op'){
+    const isMul=val==='mul';
+    document.getElementById('tbl-sel').style.display=isMul?'block':'none';
+    document.getElementById('range-sel').style.display=isMul?'none':'block';
+    if(!isMul){A.cfg.table=0;document.getElementById('btnPlay').disabled=false;}
+    else document.getElementById('btnPlay').disabled=!A.cfg.table;
+  }
+}
+
+function buildTG(){
+  const g=document.getElementById('tblG');g.innerHTML='';
+  for(let i=1;i<=12;i++){
+    const b=document.createElement('button');b.className='tn'+(A.cfg.table===i?' on':'');
+    b.textContent=i;const n=i;
+    b.onclick=()=>{
+      A.cfg.table=n;document.querySelectorAll('.tn').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');document.getElementById('btnPlay').disabled=false;
+    };
+    g.appendChild(b);
+  }
+}
+
+/* ═══════════════ LAUNCH ═══════════════ */
+function launchGame(){
+  stopAll();
+  setBar(100);document.getElementById('hudL').textContent='JUGANDO';
+  A.score=0;A.correct=0;A.total=0;
+  document.getElementById('hudP').textContent='0';
+  A.lives=A.cfg.lives||3;
+  showScr('s3');scaleGW();
+  window.addEventListener('resize',scaleGW);
+  if(A.sub==='math')initMath();
+  else if(A.sub==='sci')initSci();
+  else initLang();
+}
+
+function stopAll(){
+  A.gRun=false;
+  if(A.gAnim){cancelAnimationFrame(A.gAnim);A.gAnim=null;}
+  A.sObjs.forEach(o=>{if(o.mt)clearTimeout(o.mt);});
+  A.sObjs=[];
+  window.removeEventListener('resize',scaleGW);
+}
+
+/* ═══════════════ DECORATIONS ═══════════════ */
+function addStars(gw,n){
+  const sb=document.createElement('div');sb.className='star-bg';
+  for(let i=0;i<n;i++){
+    const s=document.createElement('div');s.className='star';
+    const sz=rnd(.8,2.5);
+    s.style.cssText=`width:${sz}px;height:${sz}px;left:${rnd(0,100)}%;top:${rnd(0,95)}%;--tw:${rnd(2,5)}s;--twd:${rnd(0,4)}s;`;
+    sb.appendChild(s);
+  }gw.appendChild(sb);
+}
+function addBubbles(gw){
+  for(let i=0;i<10;i++){
+    const b=document.createElement('div');b.className='bubble-d';
+    const sz=rnd(6,18);
+    b.style.cssText=`width:${sz}px;height:${sz}px;left:${rnd(2,95)}%;bottom:${rnd(0,25)}%;--bd:${rnd(4,10)}s;--bdd:${rnd(0,8)}s;`;
+    gw.appendChild(b);
+  }
+  const fl=document.createElement('div');fl.className='ocean-floor';gw.appendChild(fl);
+}
+function addTrees(gw){
+  const ts=['🌴','🌳','🌿','🌲'];
+  const gr=document.createElement('div');gr.className='ground';gw.appendChild(gr);
+  for(let i=0;i<5;i++){
+    const t=document.createElement('div');t.className='tree';
+    t.textContent=ts[Math.floor(Math.random()*ts.length)];
+    t.style.left=rnd(2,90)+'%';t.style.fontSize=rnd(1.8,3.2)+'rem';
+    gw.appendChild(t);
+  }
+}
+function buildBG(gw,theme,type){
+  gw.className='';
+  if(type==='math'){
+    gw.classList.add('th-'+theme);
+    if(theme==='space')addStars(gw,60);
+    else if(theme==='ocean')addBubbles(gw);
+    else if(theme==='jungle'||theme==='snow'){
+      const gr=document.createElement('div');gr.className='ground';gw.appendChild(gr);
+      if(theme==='jungle'){
+        ['🌴','🌳','🌲'].forEach((e,i)=>{
+          const t=document.createElement('div');t.className='tree';
+          t.textContent=e;t.style.left=(10+i*30)+'%';gw.appendChild(t);
+        });
+      }
+    }
+  } else if(type==='sci'){
+    gw.classList.add('hab-'+theme);
+    if(theme==='jungle')addTrees(gw);
+    else if(theme==='ocean')addBubbles(gw);
+    else if(theme==='savanna'){const gr=document.createElement('div');gr.className='ground';gw.appendChild(gr);}
+    else if(theme==='night'){
+      addStars(gw,80);
+      const gr=document.createElement('div');gr.className='ground';gw.appendChild(gr);
+      const m=document.createElement('div');m.className='moon';gw.appendChild(m);
+    }
+  } else { // lang
+    gw.classList.add('lth-'+theme);
+    if(theme==='cosmos'||theme==='library')addStars(gw,40);
+  }
+}
+
+/* ═══════════════════════════════════════
+   📐 MATH GAME — "Lluvia de Respuestas"
+═══════════════════════════════════════ */
+function initMath(){
+  A.gRun=true;A.mIdx=0;A.mObjs=[];A.mSpawned=new Set();A.mLastT=0;A.mSpawnClock=0;
+  A.mQs=genMathQs();A.total=A.mQs.length;
+  const gw=getGW();gw.innerHTML='';
+  buildBG(gw,A.cfg.mtheme,'math');
+  // Overlay
+  const ov=document.createElement('div');ov.className='g-overlay';ov.id='mov';
+  ov.innerHTML=`<div class="g-q" id="mq">—</div><div class="g-prog" id="mgp">0/${A.total}</div><div class="g-lives" id="mlv">${'❤️'.repeat(A.lives)}</div>`;
+  gw.appendChild(ov);
+  showMathQ();
+  A.gAnim=requestAnimationFrame(mathLoop);
+}
+
+function genMathQs(){
+  const op=A.cfg.op,cnt=A.cfg.qcount||5;
+  if(op==='mul'){
+    const tbl=A.cfg.table||2;
+    return shuf([1,2,3,4,5,6,7,8,9,10,11,12]).slice(0,cnt).map(n=>{
+      const ans=tbl*n;
+      return{q:`${tbl} × ${n} =`,ans,opts:shuf([ans,...makeWrongMath(ans,tbl)])};
+    });
+  }
+  const r=A.cfg.range||10;
+  return Array.from({length:cnt},()=>{
+    const a=Math.floor(rnd(1,r)),b=Math.floor(rnd(1,r));
+    if(op==='sum'){const ans=a+b;return{q:`${a} + ${b} =`,ans,opts:shuf([ans,...makeWrongMath(ans,1)])};}
+    const big=Math.max(a,b),sm=Math.min(a,b);const ans=big-sm;
+    return{q:`${big} − ${sm} =`,ans,opts:shuf([ans,...makeWrongMath(ans,1)])};
+  });
+}
+
+function makeWrongMath(correct,tbl){
+  const s=new Set();
+  const pool=[tbl,-tbl,tbl*2,-tbl*2,1,-1,2,-2,3,-3,4,-4,5,-5,6,-6,7,-7,8,-8];
+  let t=0;
+  while(s.size<3&&t<100){t++;const v=correct+pool[Math.floor(Math.random()*pool.length)];if(v>0&&v!==correct&&!s.has(v))s.add(v);}
+  let e=1;while(s.size<3){const v=correct+e;if(v!==correct)s.add(v);e++;}
+  return[...s].slice(0,3);
+}
+
+function showMathQ(){
+  if(A.mIdx>=A.mQs.length){endGame();return;}
+  const q=A.mQs[A.mIdx];
+  const el=document.getElementById('mq');if(el)el.innerHTML=`${q.q} <span>?</span>`;
+  const gp=document.getElementById('mgp');if(gp)gp.textContent=`${A.mIdx}/${A.total}`;
+  const lv=document.getElementById('mlv');if(lv)lv.textContent='❤️'.repeat(Math.max(0,A.lives));
+  // Clear any leftover objects
+  A.mObjs.forEach(o=>o.el.remove());A.mObjs=[];
+  A.mSpawned=new Set();
+  A.mSpawnClock=0;
+}
+
+function mathLoop(ts){
+  if(!A.gRun)return;
+  const dt=A.mLastT?Math.min((ts-A.mLastT)/1000,0.08):0;
+  A.mLastT=ts;
+  const spd={slow:55,norm:95,fast:155}[A.cfg.speed]||95;
+
+  // Spawn objects (each option spawned exactly once per question)
+  if(A.mIdx<A.mQs.length){
+    A.mSpawnClock+=dt;
+    const q=A.mQs[A.mIdx];
+    if(A.mSpawnClock>0.3&&A.mSpawned.size<q.opts.length){
+      A.mSpawnClock=0;
+      // Find next un-spawned option
+      const toSpawn=q.opts.find(o=>!A.mSpawned.has(o));
+      if(toSpawn!==undefined){
+        A.mSpawned.add(toSpawn);
+        spawnMObj(toSpawn,toSpawn===q.ans);
+      }
+    }
+  }
+
+  // Move objects down
+  for(let i=A.mObjs.length-1;i>=0;i--){
+    const o=A.mObjs[i];
+    o.y+=spd*dt;
+    o.el.style.top=o.y+'px';
+    if(o.y>GW_H+10){
+      o.el.remove();A.mObjs.splice(i,1);
+      if(o.isCorr){
+        // Missed the correct answer — lose life, respawn it
+        A.lives--;
+        const lv=document.getElementById('mlv');if(lv)lv.textContent='❤️'.repeat(Math.max(0,A.lives));
+        flashOverlay('flash-red');
+        if(A.lives<=0){endGame();return;}
+        // Respawn correct answer
+        if(A.mIdx<A.mQs.length)spawnMObj(A.mQs[A.mIdx].ans,true);
+      }
+    }
+  }
+  A.gAnim=requestAnimationFrame(mathLoop);
+}
+
+function spawnMObj(val,isCorr){
+  if(A.mIdx>=A.mQs.length)return;
+  const el=document.createElement('div');el.className='mobj';el.textContent=val;
+  const x=rnd(30,GW_W-86);const y=-70;
+  el.style.left=x+'px';el.style.top=y+'px';
+  el.addEventListener('click',()=>clickMObj(val,isCorr,el));
+  getGW().appendChild(el);
+  A.mObjs.push({el,val,isCorr,y,caught:false});
+}
+
+function clickMObj(val,isCorr,el){
+  if(!A.gRun)return;
+  if(isCorr){
+    el.style.animation='popOk .5s ease forwards';
+    A.correct++;addPts(100+A.lives*15);
+    // Remove all current objects
+    A.mObjs.forEach(o=>{o.caught=true;setTimeout(()=>{try{o.el.remove();}catch(e){}},50);});
+    A.mObjs=[];
+    flashOverlay('flash-green');
+    setTimeout(()=>{A.mIdx++;showMathQ();},500);
+  } else {
+    el.style.animation='popFail .4s ease';
+    A.lives--;
+    const lv=document.getElementById('mlv');if(lv)lv.textContent='❤️'.repeat(Math.max(0,A.lives));
+    flashOverlay('flash-red');
+    setTimeout(()=>{el.style.animation='';},400);
+    if(A.lives<=0){endGame();}
+  }
+}
+
+/* ═══════════════════════════════════════
+   🌿 SCIENCE GAME — "Atrapa el Animal"
+   FIX: click handler uses obj (game state) not a (raw data)
+═══════════════════════════════════════ */
+function initSci(){
+  A.gRun=true;A.sCaught=0;A.sRound=0;A.sObjs=[];A.correct=0;
+  const pool=shuf(ANIMALS[A.cfg.habitat]||ANIMALS.jungle).slice(0,A.cfg.anicount||6);
+
+  const gw=getGW();gw.innerHTML='';
+  buildBG(gw,A.cfg.habitat,'sci');
+
+  // Build round order
+  if(A.cfg.scimode==='vi'){
+    A.sRounds=['Vertebrado','Invertebrado'];
+  } else {
+    const cls=[...new Set(pool.map(a=>a.cl))];
+    A.sRounds=shuf(cls);
+  }
+  A.total=A.sRounds.length;
+
+  // Overlay
+  const ov=document.createElement('div');ov.className='g-overlay';ov.id='sov';
+  ov.innerHTML=`<div style="font-size:.7rem;color:var(--muted);font-weight:800;letter-spacing:1px">🎯 RONDA</div><div class="g-cmd" id="scmd">Preparando…</div><div class="g-prog" id="spg"></div><div class="g-lives" id="slv">${'❤️'.repeat(A.lives)}</div>`;
+  gw.appendChild(ov);
+
+  // ★ KEY FIX: create obj FIRST, bind click to obj (not to raw animal 'a')
+  pool.forEach(a=>{
+    const el=document.createElement('div');el.className='anim';
+    el.appendChild(document.createTextNode(a.e));
+    const lbl=document.createElement('span');lbl.className='albl';lbl.textContent=a.n;
+    el.appendChild(lbl);
+
+    const spdMap={slow:2.8,norm:1.9,fast:1.2};
+    const movSpd=(spdMap[A.cfg.spd]||1.9)+rnd(-.3,.3);
+    const sx=rnd(50,GW_W-90),sy=getAnimalStartY(a.mv);
+    el.style.left=sx+'px';el.style.top=sy+'px';
+
+    // Create the game state object
+    const obj={...a,el,x:sx,y:sy,alive:true,mt:null,speed:movSpd};
+    A.sObjs.push(obj);
+
+    // ★ Bind click to obj (has .alive), NOT to a (no .alive → always returns)
+    el.addEventListener('click',()=>onAnimalClick(obj));
+    gw.appendChild(el);
+
+    // Start moving after short delay
+    obj.mt=setTimeout(()=>moveAnimal(obj),rnd(300,900));
+  });
+
+  startSciRound();
+}
+
+function getAnimalStartY(mv){
+  if(mv==='fly')return rnd(70,GW_H*0.4);
+  if(mv==='swim'||mv==='float')return rnd(GW_H*0.25,GW_H*0.72);
+  return rnd(GW_H*0.5,GW_H-90); // walk, slither, hop
+}
+
+function getAnimalTargetPos(mv){
+  const margin=60;
+  if(mv==='fly')  return{x:rnd(margin,GW_W-margin),y:rnd(70,GW_H*0.42)};
+  if(mv==='swim') return{x:rnd(margin,GW_W-margin),y:rnd(GW_H*0.3,GW_H*0.7)};
+  if(mv==='float')return{x:rnd(margin,GW_W-margin),y:rnd(GW_H*0.15,GW_H*0.72)};
+  // walk, slither, hop
+  return{x:rnd(margin,GW_W-margin),y:rnd(GW_H*0.52,GW_H-90)};
+}
+
+function moveAnimal(obj){
+  if(!obj.alive||!A.gRun)return;
+  const t=getAnimalTargetPos(obj.mv);
+  const flipX=t.x>obj.x;
+  obj.el.style.transition=`left ${obj.speed}s ease-in-out, top ${obj.speed}s ease-in-out`;
+  obj.el.style.transform=flipX?'scaleX(-1)':'scaleX(1)';
+  obj.el.style.left=t.x+'px';obj.el.style.top=t.y+'px';
+  obj.x=t.x;obj.y=t.y;
+  const nextWait=(obj.speed*1000)+rnd(400,1400);
+  obj.mt=setTimeout(()=>moveAnimal(obj),nextWait);
+}
+
+function startSciRound(){
+  if(A.sRound>=A.sRounds.length){endGame();return;}
+  const target=A.sRounds[A.sRound];A.sTarget=target;
+  const key=A.cfg.scimode==='vi'?'vi':'cl';
+  const needed=A.sObjs.filter(o=>o.alive&&o[key]===target);
+  A.sNeeded=needed.length;A.sCaught=0;
+  const cmd=document.getElementById('scmd');
+  const plural=target.endsWith('o')?target+'s':target+'es';
+  if(cmd)cmd.innerHTML=`¡Atrapa todos los <strong style="color:var(--cyan)">${plural.toUpperCase()}</strong>!`;
+  updateSciProg();
+}
+
+function updateSciProg(){
+  const pg=document.getElementById('spg');if(pg)pg.textContent=`${A.sCaught}/${A.sNeeded}`;
+}
+
+function onAnimalClick(obj){
+  // ★ obj is the game state object — obj.alive is properly set
+  if(!obj.alive||!A.gRun)return;
+  const key=A.cfg.scimode==='vi'?'vi':'cl';
+  if(obj[key]===A.sTarget){
+    // Correct!
+    obj.alive=false;
+    if(obj.mt){clearTimeout(obj.mt);obj.mt=null;}
+    obj.el.style.transition='none';
+    obj.el.style.animation='aCatch .5s ease forwards';
+    A.sCaught++;addPts(120);
+    updateSciProg();
+    setTimeout(()=>{try{obj.el.remove();}catch(e){}},520);
+    if(A.sCaught>=A.sNeeded){
+      A.correct++;
+      flashOverlay('flash-green');
+      A.sRound++;
+      setTimeout(()=>respawnAndNextRound(),900);
+    }
+  } else {
+    // Wrong animal
+    obj.el.style.animation='aWrong .4s ease';
+    setTimeout(()=>{obj.el.style.animation='';},400);
+    A.lives--;
+    const lv=document.getElementById('slv');if(lv)lv.textContent='❤️'.repeat(Math.max(0,A.lives));
+    flashOverlay('flash-red');
+    if(A.lives<=0){endGame();}
+  }
+}
+
+function respawnAndNextRound(){
+  if(!A.gRun)return;
+  const gw=getGW();
+  // Bring back caught animals for next round
+  A.sObjs.forEach(obj=>{
+    if(!obj.alive){
+      obj.alive=true;
+      const el=document.createElement('div');el.className='anim';
+      el.appendChild(document.createTextNode(obj.e));
+      const lbl=document.createElement('span');lbl.className='albl';lbl.textContent=obj.n;
+      el.appendChild(lbl);
+      const sx=rnd(50,GW_W-90),sy=getAnimalStartY(obj.mv);
+      el.style.left=sx+'px';el.style.top=sy+'px';
+      obj.el=el;obj.x=sx;obj.y=sy;
+      // ★ Bind click to obj again (same object reference, alive is now true)
+      el.addEventListener('click',()=>onAnimalClick(obj));
+      gw.appendChild(el);
+      obj.mt=setTimeout(()=>moveAnimal(obj),rnd(200,600));
+    }
+  });
+  startSciRound();
+}
+
+/* ═══════════════════════════════════════
+   📖 LANGUAGE GAME — "Palabras Voladoras"
+═══════════════════════════════════════ */
+function initLang(){
+  A.gRun=true;A.lIdx=0;A.correct=0;
+  const pool=SENTS[A.cfg.ldiff]||SENTS.easy;
+  A.lSents=shuf(pool).slice(0,Math.min(A.cfg.lcount||3,pool.length));
+  A.total=A.lSents.length;
+  const gw=getGW();gw.innerHTML='';
+  buildBG(gw,A.cfg.ltheme,'lang');
+  loadLangSentence();
+}
+
+function loadLangSentence(){
+  if(A.lIdx>=A.lSents.length){endGame();return;}
+  const gw=getGW();
+  // Remove old game elements
+  gw.querySelectorAll('.wfloat,.sent-display,.l-check-btn,.l-prog-lbl,.l-lives-lbl').forEach(e=>e.remove());
+  A.lSlots=[];A.lWordObjs=[];
+
+  const sent=A.lSents[A.lIdx];
+  const shuffled=shuf([...sent.w]);
+
+  // Sentence display at top
+  const sd=document.createElement('div');sd.className='sent-display';
+  const title=document.createElement('div');title.className='sent-title';
+  title.textContent=`ORACIÓN ${A.lIdx+1} DE ${A.total} · TOCA LAS PALABRAS EN ORDEN CORRECTO`;
+  sd.appendChild(title);
+  const slotsDiv=document.createElement('div');slotsDiv.className='sent-slots';sd.appendChild(slotsDiv);
+  sent.w.forEach((_,i)=>{
+    const sl=document.createElement('div');sl.className='sl empty';sl.id='sl'+i;sl.textContent='___';
+    // Clicking a filled slot returns the word to pool
+    sl.addEventListener('click',()=>returnSlot(i));
+    slotsDiv.appendChild(sl);
+    A.lSlots.push({el:sl,word:null,idx:i});
+  });
+  gw.appendChild(sd);
+
+  // Measure sentence display height to place words below it
+  const sdH=sd.offsetHeight||110;
+  const yMin=sdH+24;
+
+  // Floating words
+  shuffled.forEach(w=>{
+    const el=document.createElement('div');el.className='wfloat';el.textContent=w;
+    const x=rnd(8,GW_W-120);
+    const y=rnd(yMin,GW_H-70);
+    el.style.left=x+'px';el.style.top=y+'px';
+    el.style.setProperty('--dur',(2.8+rnd(0,2.5))+'s');
+    el.style.setProperty('--dly',rnd(0,1.8)+'s');
+    el.addEventListener('click',()=>clickWord(el,w));
+    gw.appendChild(el);
+    A.lWordObjs.push({el,word:w,used:false});
+  });
+
+  // Progress label
+  const lp=document.createElement('div');lp.className='l-prog-lbl';
+  lp.textContent=`${A.lIdx}/${A.total} completadas`;gw.appendChild(lp);
+
+  // Lives label
+  const ll=document.createElement('div');ll.className='l-lives-lbl';
+  ll.id='llv';ll.textContent='❤️'.repeat(Math.max(0,A.lives));gw.appendChild(ll);
+
+  // Check button (disabled until all slots filled)
+  const cb=document.createElement('button');cb.className='l-check-btn';cb.textContent='✓ Verificar';
+  cb.disabled=true;cb.id='lchk';
+  cb.addEventListener('click',checkLang);
+  gw.appendChild(cb);
+}
+
+function clickWord(el,word){
+  if(!A.gRun)return;
+  // Find the word object
+  const wo=A.lWordObjs.find(o=>o.el===el&&!o.used);
+  if(!wo)return;
+  // Find next empty slot
+  const slot=A.lSlots.find(s=>!s.word);
+  if(!slot)return;
+  // Place word
+  wo.used=true;el.classList.add('used');
+  slot.word=word;slot.el.className='sl filled';slot.el.textContent=word;
+  // Enable check when all slots filled
+  if(A.lSlots.every(s=>s.word)){
+    const cb=document.getElementById('lchk');if(cb)cb.disabled=false;
+  }
+}
+
+function returnSlot(idx){
+  // ★ Allow clicking filled slots to undo (return word to pool)
+  const slot=A.lSlots[idx];
+  if(!slot||!slot.word)return;
+  const word=slot.word;
+  // Find the word object and restore it
+  const wo=A.lWordObjs.find(o=>o.word===word&&o.used);
+  if(wo){wo.used=false;wo.el.classList.remove('used');}
+  slot.word=null;slot.el.className='sl empty';slot.el.textContent='___';
+  // Disable check button (not all filled anymore)
+  const cb=document.getElementById('lchk');if(cb)cb.disabled=true;
+}
+
+function checkLang(){
+  const built=A.lSlots.map(s=>s.word).join(' ');
+  const correct=A.lSents[A.lIdx].a;
+  if(built===correct){
+    // Correct!
+    A.lSlots.forEach(s=>{s.el.className='sl ok';});
+    A.correct++;addPts(150);
+    flashOverlay('flash-green');
+    setTimeout(()=>{A.lIdx++;loadLangSentence();},1300);
+  } else {
+    // Wrong — flash red, reset slots and words so player can try again
+    A.lSlots.forEach(s=>{s.el.className='sl fail';});
+    flashOverlay('flash-red');
+    A.lives--;
+    const ll=document.getElementById('llv');if(ll)ll.textContent='❤️'.repeat(Math.max(0,A.lives));
+    if(A.lives<=0){endGame();return;}
+    setTimeout(()=>{
+      // ★ Reset all slots to empty
+      A.lSlots.forEach(s=>{
+        s.word=null;s.el.className='sl empty';s.el.textContent='___';
+      });
+      // ★ Restore all words to floating
+      A.lWordObjs.forEach(wo=>{
+        wo.used=false;wo.el.classList.remove('used');
+      });
+      const cb=document.getElementById('lchk');if(cb)cb.disabled=true;
+    },900);
+  }
+}
+
+/* ═══════════════ END GAME ═══════════════ */
+function endGame(){
+  stopAll();clearInterval(A.gInt);
+  const tot=A.total||1;
+  const acc=Math.round((A.correct/tot)*100);
+  document.getElementById('rPts').textContent=A.score.toLocaleString();
+  document.getElementById('rAcc').textContent=acc+'%';
+  document.getElementById('rCor').textContent=A.correct+'/'+tot;
+  let ico='💪',tit='¡Sigue practicando!';
+  if(acc>=90){ico='🥇';tit='¡EXCELENTE!';}
+  else if(acc>=70){ico='🥈';tit='¡MUY BIEN!';}
+  else if(acc>=50){ico='🥉';tit='¡BIEN HECHO!';}
+  document.getElementById('rIco').textContent=ico;
+  document.getElementById('rTit').textContent=tit;
+  showScr('s4');confetti();
+}
+
+function replayGame(){
+  A.lives=A.cfg.lives||3;A.score=0;A.correct=0;A.total=0;
+  document.getElementById('hudP').textContent='0';
+  A.gTime=480;document.getElementById('hudT').textContent='08:00';
+  document.getElementById('hudT').classList.remove('red');
+  startGT();launchGame();
+}
+
+function resetAll(){
+  stopAll();clearInterval(A.gInt);
+  A.sub=null;A.score=0;A.lives=3;A.gTime=480;A.correct=0;A.total=0;
+  document.getElementById('hudP').textContent='0';
+  document.getElementById('hudT').textContent='08:00';
+  document.getElementById('hudT').classList.remove('red');
+  document.getElementById('hud').style.display='none';
+  document.querySelectorAll('.sc').forEach(c=>c.classList.remove('sel'));
+  document.getElementById('btnCfg').disabled=true;
+  A.cfg={op:'mul',table:null,range:10,mtheme:'space',qcount:5,speed:'norm',lives:3,
+         scimode:'vi',habitat:'jungle',anicount:6,spd:'norm',
+         ldiff:'easy',ltheme:'library',lcount:3};
+  showScr('s0');
+}
+
+/* ═══════════════ DOWNLOAD ═══════════════ */
+function dlGame(){
+  const cfg=JSON.parse(JSON.stringify({sub:A.sub,cfg:A.cfg}));
+  const inject=`<script>
+window.__AC=${JSON.stringify(cfg)};
+window.addEventListener('DOMContentLoaded',function(){
+  if(!window.__AC)return;
+  A.sub=__AC.sub;Object.assign(A.cfg,__AC.cfg);
+  document.getElementById('hud').style.display='flex';
+  A.gTime=99999;document.getElementById('hudT').textContent='∞';
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
+  document.getElementById('s3').classList.add('on');
+  launchGame();
+});
+<\/script>`;
+  let html='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+  html=html.replace('</head>',inject+'</head>');
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;
+  a.download=`juego-${{math:'matematicas',sci:'ciencias',lang:'lengua'}[A.sub]||'educativo'}.html`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),5000);
+}
+
+/* ═══════════════ CONFETTI ═══════════════ */
+function confetti(){
+  const cols=['#00e5ff','#ffb300','#e040fb','#00e676','#ff5252','#fff'];
+  for(let i=0;i<80;i++){
+    setTimeout(()=>{
+      const el=document.createElement('div');el.className='cf';
+      el.style.left=rnd(0,100)+'vw';
+      el.style.background=cols[Math.floor(Math.random()*cols.length)];
+      el.style.setProperty('--dx',rnd(-120,120)+'px');
+      el.style.animationDuration=rnd(1.5,3)+'s';
+      el.style.animationDelay=rnd(0,.5)+'s';
+      el.style.borderRadius=Math.random()>.5?'50%':'2px';
+      document.body.appendChild(el);setTimeout(()=>el.remove(),4000);
+    },i*22);
+  }
+}
+</script>
+</body>
+</html>
